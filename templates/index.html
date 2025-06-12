@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h5">QR Code Generator</h2>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                <form id="qrForm" method="POST" action="{{ url_for('generate') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">QR Code Type</label>
+                        <select class="form-select" id="qrType" name="qr_type">
+                            <option value="text" {% if qr_type == 'text' %}selected{% endif %}>Text</option>
+                            <option value="url" {% if qr_type == 'url' %}selected{% endif %}>URL</option>
+                            <option value="phone" {% if qr_type == 'phone' %}selected{% endif %}>Phone Number</option>
+                            <option value="email" {% if qr_type == 'email' %}selected{% endif %}>Email</option>
+                            <option value="wifi" {% if qr_type == 'wifi' %}selected{% endif %}>Wi-Fi</option>
+                            <option value="vcard" {% if qr_type == 'vcard' %}selected{% endif %}>vCard (Contact)</option>
+                        </select>
+                    </div>
+
+                    <div id="contentFields" class="{% if qr_type in ['wifi', 'vcard'] %}d-none{% endif %}">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Content</label>
+                            <textarea class="form-control" id="content" name="content" rows="3" {% if qr_type not in ['wifi', 'vcard'] %}required{% endif %}>{{ form_data.content if form_data.content else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div id="wifiFields" class="{% if qr_type != 'wifi' %}d-none{% endif %}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="ssid" class="form-label">SSID*</label>
+                                <input type="text" class="form-control" id="ssid" name="ssid" value="{{ form_data.ssid if form_data.ssid else '' }}" {% if qr_type == 'wifi' %}required{% endif %}>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="encryption" class="form-label">Encryption</label>
+                                <select class="form-select" id="encryption" name="encryption">
+                                    <option value="WPA" {% if form_data.encryption == 'WPA' %}selected{% endif %}>WPA/WPA2</option>
+                                    <option value="WEP" {% if form_data.encryption == 'WEP' %}selected{% endif %}>WEP</option>
+                                    <option value="nopass" {% if form_data.encryption == 'nopass' %}selected{% endif %}>None (Open Network)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="text" class="form-control" id="password" name="password" value="{{ form_data.password if form_data.password else '' }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="vcardFields" class="{% if qr_type != 'vcard' %}d-none{% endif %}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name*</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ form_data.first_name if form_data.first_name else '' }}" {% if qr_type == 'vcard' %}required{% endif %}>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name*</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ form_data.last_name if form_data.last_name else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="organization" class="form-label">Organization</label>
+                                <input type="text" class="form-control" id="organization" name="organization" value="{{ form_data.organization if form_data.organization else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" name="title" value="{{ form_data.title if form_data.title else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" value="{{ form_data.phone if form_data.phone else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ form_data.email if form_data.email else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="address" name="address" value="{{ form_data.address if form_data.address else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" class="form-control" id="website" name="website" value="{{ form_data.website if form_data.website else '' }}">
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="profile_photo_url" class="form-label">Profile Photo URL (Optional)</label>
+                                <input type="url" class="form-control" id="profile_photo_url" name="profile_photo_url" value="{{ form_data.profile_photo_url if form_data.profile_photo_url else '' }}">
+                                <div class="form-text">Link ke foto profil Anda yang di-host online (e.g., Google Photos, Imgur). Tidak semua aplikasi kontak mendukung fitur ini.</div>
+                            </div>
+                             <div class="col-md-12 mb-3">
+                                <label for="notes" class="form-label">Notes (Optional)</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ form_data.notes if form_data.notes else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3 class="h6">Customization Options</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="foreground_color" class="form-label">Foreground Color</label>
+                                    <input type="color" class="form-control form-control-color" id="foreground_color" name="foreground_color" value="{{ options.foreground_color if options and options.foreground_color else '#000000' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="background_color" class="form-label">Background Color</label>
+                                    <input type="color" class="form-control form-control-color" id="background_color" name="background_color" value="{{ options.background_color if options and options.background_color else '#FFFFFF' }}">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="size" class="form-label">Size (px)</label>
+                                    <input type="range" class="form-range" min="5" max="20" step="1" id="size" name="size" value="{{ options.size if options and options.size else 10 }}">
+                                    <div class="text-center"><span id="sizeValue">{{ options.size if options and options.size else 10 }}</span> px</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="border" class="form-label">Border Size</label>
+                                    <input type="range" class="form-range" min="1" max="10" step="1" id="border" name="border" value="{{ options.border if options and options.border else 4 }}">
+                                    <div class="text-center"><span id="borderValue">{{ options.border if options and options.border else 4 }}</span></div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="error_correction" class="form-label">Error Correction</label>
+                                    <select class="form-select" id="error_correction" name="error_correction">
+                                        <option value="L" {% if options and options.error_correction == 'L' %}selected{% endif %}>Low (7%)</option>
+                                        <option value="M" {% if options and options.error_correction == 'M' %}selected{% endif %}>Medium (15%)</option>
+                                        <option value="Q" {% if options and options.error_correction == 'Q' %}selected{% endif %}>Quartile (25%)</option>
+                                        <option value="H" {% if options and options.error_correction == 'H' %}selected{% endif %}>High (30%)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="rounded" name="rounded" value="true" {% if options and options.rounded %}checked{% endif %}>
+                                        <label class="form-check-label" for="rounded">Rounded Modules</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Output Format</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="formatPng" value="png" {% if options and options.format == 'png' or not options %}checked{% endif %}>
+                                        <label class="form-check-label" for="formatPng">PNG</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="formatSvg" value="svg" {% if options and options.format == 'svg' %}checked{% endif %}>
+                                        <label class="form-check-label" for="formatSvg">SVG</label>
+                                    </div>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="logo" class="form-label">Logo (optional)</label>
+                                    <input class="form-control" type="file" id="logo" name="logo" accept="image/*">
+                                    <div class="form-text">Maximum size: 2MB (PNG, JPG, GIF)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-qr-code"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="h5">QR Code Preview</h2>
+            </div>
+            <div class="card-body text-center">
+                {% if qr_code %}
+                <img src="{{ url_for('serve_qr_code', filename=qr_code) }}" alt="Generated QR Code" class="img-fluid mb-3" id="qrPreview">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{{ url_for('serve_qr_code', filename=qr_code) }}" download="{{ qr_code }}" class="btn btn-success me-md-2">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-muted py-5">
+                    <i class="bi bi-qr-code" style="font-size: 5rem;"></i>
+                    <p class="mt-3">Your QR code will appear here</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateSliderValues() {
+        document.getElementById('sizeValue').textContent = document.getElementById('size').value;
+        document.getElementById('borderValue').textContent = document.getElementById('border').value;
+    }
+
+    document.getElementById('size').addEventListener('input', updateSliderValues);
+    document.getElementById('border').addEventListener('input', updateSliderValues);
+
+    updateSliderValues();
+
+    document.getElementById('qrType').addEventListener('change', function() {
+        const type = this.value;
+        const contentFields = document.getElementById('contentFields');
+        const wifiFields = document.getElementById('wifiFields');
+        const vcardFields = document.getElementById('vcardFields');
+
+        const contentTextarea = document.getElementById('content');
+        const ssidInput = document.getElementById('ssid');
+        const firstNameInput = document.getElementById('first_name');
+        const lastNameInput = document.getElementById('last_name'); // Keep this for vcard type
+
+        // Hide all specific fields and remove required attributes
+        contentFields.classList.add('d-none');
+        wifiFields.classList.add('d-none');
+        vcardFields.classList.add('d-none');
+        
+        contentTextarea.removeAttribute('required');
+        ssidInput.removeAttribute('required');
+        firstNameInput.removeAttribute('required');
+        lastNameInput.removeAttribute('required'); // Remove required for last name too if not primary key
+
+
+        // Show relevant fields and set required attributes
+        switch(type) {
+            case 'text':
+                contentFields.classList.remove('d-none');
+                contentTextarea.placeholder = 'Enter any text...';
+                contentTextarea.setAttribute('required', 'true');
+                break;
+            case 'url':
+                contentFields.classList.remove('d-none');
+                contentTextarea.placeholder = 'Enter URL (e.g. https://example.com)...';
+                contentTextarea.setAttribute('required', 'true');
+                break;
+            case 'phone':
+                contentFields.classList.remove('d-none');
+                contentTextarea.placeholder = 'Enter phone number (e.g. +1234567890)...';
+                contentTextarea.setAttribute('required', 'true');
+                break;
+            case 'email':
+                contentFields.classList.remove('d-none');
+                contentTextarea.placeholder = 'Enter email address...';
+                contentTextarea.setAttribute('required', 'true');
+                break;
+            case 'wifi':
+                wifiFields.classList.remove('d-none');
+                ssidInput.setAttribute('required', 'true');
+                break;
+            case 'vcard':
+                vcardFields.classList.remove('d-none');
+                firstNameInput.setAttribute('required', 'true'); 
+                break;
+        }
+    });
+
+    document.getElementById('qrType').dispatchEvent(new Event('change'));
+
+    document.getElementById('qrForm').addEventListener('submit', function(event) {
+        // Client-side validation for vCard: at least first name or last name
+        const qrType = document.getElementById('qrType').value;
+        if (qrType === 'vcard') {
+            const firstName = document.getElementById('first_name').value.trim();
+            const lastName = document.getElementById('last_name').value.trim();
+            if (!firstName && !lastName) {
+                alert('For vCard, at least First Name or Last Name is required.');
+                event.preventDefault(); // Stop form submission
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

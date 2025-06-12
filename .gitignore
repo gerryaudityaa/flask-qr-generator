@@ -1,0 +1,27 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python/
+env/
+venv/
+.venv/
+
+# Database
+database.db
+
+# Uploaded files (QR codes, logos)
+static/qr_codes/
+static/images/uploads/
+
+# Flask-specific
+instance/
+.flaskenv
+
+# OS-specific
+.DS_Store
+.vscode/ # If you use VS Code and don't want its config committed
+Thumbs.db

@@ -1,0 +1,26 @@
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+#qrPreview {
+    max-width: 300px;
+    max-height: 300px;
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--bs-primary);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--bs-primary);
+}
+
+.form-range::-ms-thumb {
+    background: var(--bs-primary);
+}
