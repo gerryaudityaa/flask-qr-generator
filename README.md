@@ -134,7 +134,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## Contact
 
 Gerry Auditya - [gerryauditya@gmail.com](mailto:gerryauditya@gmail.com)
-Project Link: [https://github.com/gerryaudityaa/flask-qr-generator](https://github.com/gerryaudityaa/flask-qr-generator)
 
 ## Live Demo
 [flask-qr-generator](https://gerryauditya.pythonanywhere.com/)
